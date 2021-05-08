@@ -14,13 +14,13 @@ Tensorflow version: 2.4.1
 Tensorflow version: 1.15.2
 
 # Use Case
-Make sure you have got all the dependencies install by doing
+Make sure you have got all the dependencies installed by doing
 ```bash
 pip install -r requirements.txt
 ```
 as well as installing the prerequisites mentioned above <br />
 
-You will need to also create a folder named "my_new_dataset" inside the "dataset" folder, so that when the code processes the images, duplicate them and relocate those to a new folder, you won't get an error
+You will also need to create a folder named "my_new_dataset" inside the "dataset" folder, so that when the code processes the images, duplicate them and relocate those to a new folder, you won't get an error
 
 # Caution
 Since the files (dataset + training model checkpoints and the result images) are too big. The download time may take a long while. Please be patient! Thank you!!! <br />
