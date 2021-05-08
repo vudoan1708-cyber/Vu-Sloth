@@ -7,8 +7,6 @@ Original file is located at
     https://colab.research.google.com/drive/17vOy7tuJ0xvnZXAPCv32WM7vu46iD3xF
 """
 
-""" Please be aware that those code lines which start with a ! is a command bash line, not an actual code """
-
 # Commented out IPython magic to ensure Python compatibility.
 # %tensorflow_version 1.x
 import tensorflow as tf
@@ -27,8 +25,6 @@ import PIL
 
 print(tf.__version__)
 
-########################
-# SYNTAX ONLY AVAILABLE FOR GOOGLE COLAB
 # mount google drive
 from google.colab import drive
 drive.mount('/content/gdrive', force_remount=True)
@@ -37,10 +33,9 @@ drive.mount('/content/gdrive', force_remount=True)
 # !rm -rf dataset
 # unzip dataset folder
 !unzip '/content/gdrive/MyDrive/AI-Assets/GAN/dataset.zip' > /dev/null
-#######################
 
 # Global Variables
-AUTOTUNE = tf.data.experimental.AUTOTUNE
+# AUTOTUNE = tf.data.experimental.AUTOTUNE
 # BUFFER_SIZE = 60000
 BATCH_SIZE = 32
 IMAGE_SIZE = 256
@@ -1207,7 +1202,7 @@ files.download(movie_name)
 os.getcwd()
 
 # Commented out IPython magic to ensure Python compatibility.
-# %cd ../..
+# %cd /content/
 
 !ls
 
@@ -1217,39 +1212,94 @@ os.getcwd()
 # Commented out IPython magic to ensure Python compatibility.
 # %cd maua-stylegan2
 !pip install -r requirements.txt
+!pip install librosa madmom kornia Ninja matplotlib scikit-image gdown
+
+# Commented out IPython magic to ensure Python compatibility.
+# %cd /content/
 
 # Because the git repo is using pytorch
 # It is necessary to convert tensorflow pkl file to pytorch one
 !git clone https://github.com/rosinality/stylegan2-pytorch
 
-# os.getcwd()
+os.getcwd()
 
+# Commented out IPython magic to ensure Python compatibility.
 # %cd stylegan2-pytorch
 
-# Convert it
-!python convert_weight.py --repo ../stylegan2-ada /content/gdrive/MyDrive/styleganada-results/00009-custom-mirror-stylegan2-kimg10000-ada-bgc-resumecustom/network-snapshot-000070.pkl
+# FFHQ
+!wget https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada/pretrained/ffhq.pkl
 
+# Derrick Schultz's Frea Buckler network (from awesome-pretrained-stylegan2)
+# !gdown https://drive.google.com/u/0/uc?id=1YzZemZAp7BVW701_BZ7uabJWJJaS2g7v
+
+# Convert it
+!python ../stylegan2-pytorch/convert_weight.py --gen ffhq.pkl --repo ../stylegan2-ada/
+# !python ../stylegan2-pytorch/convert_weight.py --gen FreaGAN.pkl --repo ../stylegan2/
+# !python convert_weight.py --repo ../stylegan2-ada /content/gdrive/MyDrive/styleganada-results/00009-custom-mirror-stylegan2-kimg10000-ada-bgc-resumecustom/network-snapshot-000070.pkl
+
+audio_file = '/content/gdrive/MyDrive/audio/demon.mp3'
+
+!git clone https://github.com/deezer/spleeter
+
+# split your audio file into 4 tracks
+# then load them individually for higher-quality onsets/chroma/etc. e.g.:
+!spleeter separate $audio_file -p spleeter:4stems
+
+# Commented out IPython magic to ensure Python compatibility.
+# %cd /content/maua-stylegan2
+
+import torch as th
+import librosa as rosa
 import audioreactive as ar
 from generate_audiovisual import generate
 
 def initialize(args):
     # exercise for the reader:
     # install https://github.com/deezer/spleeter
-    # split your audio file into 4 tracks
-    # then load them individually for higher-quality onsets/chroma/etc. e.g.:
+    
     #     !spleeter separate $audio_file -p spleeter:4stems
     #     drums, drum_sr = rosa.load("/path/to/drum_file.wav")
-    args.onsets = ar.onsets(args.audio, args.sr, ...)
-    args.chroma = ar.chroma(args.audio, args.sr, ...)
+    args.lo_onsets = ar.onsets(args.audio, args.sr, args.n_frames, fmax=150, smooth=3)
+    args.hi_onsets = ar.onsets(args.audio, args.sr, args.n_frames, fmin=150, smooth=3)
+
+    print("onsets:")
+    ar.plot_signals([args.hi_onsets, args.lo_onsets])
     return args
 
 def get_latents(selection, args):
-    latents = ar.chroma_weight_latents(args.chroma, selection)
+    chroma = ar.chroma(args.audio, args.sr, args.n_frames)
+
+    print("chroma:")
+    ar.plot_spectra([chroma], chroma=True)
+
+    chroma_latents = ar.chroma_weight_latents(chroma, selection)
+    latents = ar.gaussian_filter(chroma_latents, 4)
+
+    lo_onsets = args.lo_onsets[:, None, None]
+    hi_onsets = args.hi_onsets[:, None, None]
+
+    latents = hi_onsets * selection[[-4]] + (1 - hi_onsets) * latents
+    latents = lo_onsets * selection[[-7]] + (1 - lo_onsets) * latents
+
+    latents = ar.gaussian_filter(latents, 2, causal=0.2)
     return latents
 
 def get_noise(height, width, scale, num_scales, args):
-    noise = ar.perlin_noise(...)
-    noise *= 1 + args.onsets
+    if width > 256:
+        return None
+
+    lo_onsets = args.lo_onsets[:, None, None, None].cuda()
+    hi_onsets = args.hi_onsets[:, None, None, None].cuda()
+
+    noise_noisy = ar.gaussian_filter(th.randn((args.n_frames, 1, height, width), device="cuda"), 5)
+    noise = ar.gaussian_filter(th.randn((args.n_frames, 1, height, width), device="cuda"), 128)
+
+    if width < 128:
+        noise = lo_onsets * noise_noisy + (1 - lo_onsets) * noise
+    if width > 32:
+        noise = hi_onsets * noise_noisy + (1 - hi_onsets) * noise
+
+    noise /= noise.std() * 2.5
     return noise
 
-generate(ckpt="/path/to/model.pt", audio_file="/path/to/audio.wav", initialize=initialize, get_latents=get_latents, get_noise=get_noise)
+generate(ckpt="/content/stylegan2-pytorch/ffhq.pt", audio_file="/content/gdrive/MyDrive/audio/demon.mp3", initialize=initialize, get_latents=get_latents, get_noise=get_noise)
