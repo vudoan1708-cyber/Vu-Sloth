@@ -7,6 +7,8 @@ Original file is located at
     https://colab.research.google.com/drive/17vOy7tuJ0xvnZXAPCv32WM7vu46iD3xF
 """
 
+""" Please be aware that those code lines which start with a ! is a command bash line, not an actual code """
+
 # Commented out IPython magic to ensure Python compatibility.
 # %tensorflow_version 1.x
 import tensorflow as tf
@@ -25,6 +27,8 @@ import PIL
 
 print(tf.__version__)
 
+########################
+# SYNTAX ONLY AVAILABLE FOR GOOGLE COLAB
 # mount google drive
 from google.colab import drive
 drive.mount('/content/gdrive', force_remount=True)
@@ -33,6 +37,7 @@ drive.mount('/content/gdrive', force_remount=True)
 # !rm -rf dataset
 # unzip dataset folder
 !unzip '/content/gdrive/MyDrive/AI-Assets/GAN/dataset.zip' > /dev/null
+#######################
 
 # Global Variables
 AUTOTUNE = tf.data.experimental.AUTOTUNE
@@ -54,6 +59,7 @@ print('GPU Identified at: {}'.format(tf.test.gpu_device_name()))
 # Commented out IPython magic to ensure Python compatibility.
 # %cd /content/
 
+# Get the default pkl file from styleGAN to start the training (if continuing the training, this pkl file is not relevant anymore)
 !wget http://d36zk2xti64re0.cloudfront.net/stylegan2/networks/stylegan2-ffhq-config-f.pkl
 
 # Commented out IPython magic to ensure Python compatibility.
@@ -235,7 +241,7 @@ for filename in tqdm(os.listdir(old_path_vu),desc ='reading images ...'):
 #     kimg_per_tick           = 10,        # Progress snapshot interval.
 #     image_snapshot_ticks    = 1,       # How often to save image snapshots? None = only save 'reals.png' and 'fakes-init.png'.
 #     network_snapshot_ticks  = 1,       # How often to save network snapshots? None = only save 'networks-final.pkl'.
-#     resume_pkl              = '/content/gdrive/MyDrive/styleganada-results/00004-custom-mirror-stylegan2-kimg10000-ada-bgc-resumecustom/network-snapshot-000040.pkl',     # Network pickle to resume training from, None = train from scratch.
+#     resume_pkl              = '/content/gdrive/MyDrive/styleganada-results/00008-custom-mirror-stylegan2-kimg10000-ada-bgc-resumecustom/network-snapshot-000060.pkl',     # Network pickle to resume training from, None = train from scratch.
 #     resume_kimg             = 15000,      # Assumed training progress at the beginning. Affects reporting and training schedule.
 #     resume_time             = 0.0,      # Assumed wallclock time at the beginning. Affects reporting.
 #     abort_fn                = None,     # Callback function for determining whether to abort training.
@@ -517,7 +523,7 @@ def setup_training_options():
     dcap = None # Multiplier for discriminator capacity: <float>, default = 1
     augpipe = 'bgc'
     # resume = '/content/stylegan2-ffhq-config-f.pkl'# Load previous network: 'noresume' (default), 'ffhq256', 'ffhq512', 'ffhq1024', 'celebahq256', 'lsundog256', <file>, <url>
-    resume = '/content/gdrive/MyDrive/styleganada-results/00004-custom-mirror-stylegan2-kimg10000-ada-bgc-resumecustom/network-snapshot-000040.pkl'# Load previous network: 'noresume' (default), 'ffhq256', 'ffhq512', 'ffhq1024', 'celebahq256', 'lsundog256', <file>, <url>
+    resume = '/content/gdrive/MyDrive/styleganada-results/00008-custom-mirror-stylegan2-kimg10000-ada-bgc-resumecustom/network-snapshot-000060.pkl'# Load previous network: 'noresume' (default), 'ffhq256', 'ffhq512', 'ffhq1024', 'celebahq256', 'lsundog256', <file>, <url>
     freezed = None # Freeze-D: <int>, default = 0 discriminator layers
 
 
@@ -936,7 +942,7 @@ if __name__ == "__main__":
 
 #----------------------------------------------------------------------------
 
-# Generating using Stylgan2-ada
+# Generating interpolation using Stylgan2-ada
 # Download the model of choice
 import argparse
 import numpy as np
@@ -1197,3 +1203,53 @@ with imageio.get_writer(movie_name, mode='I') as writer:
         writer.append_data(np.array(image))
 
 files.download(movie_name)
+
+os.getcwd()
+
+# Commented out IPython magic to ensure Python compatibility.
+# %cd ../..
+
+!ls
+
+# AUDIO-VISUAL REACTIVE
+!git clone https://github.com/JCBrouwer/maua-stylegan2
+
+# Commented out IPython magic to ensure Python compatibility.
+# %cd maua-stylegan2
+!pip install -r requirements.txt
+
+# Because the git repo is using pytorch
+# It is necessary to convert tensorflow pkl file to pytorch one
+!git clone https://github.com/rosinality/stylegan2-pytorch
+
+# os.getcwd()
+
+# %cd stylegan2-pytorch
+
+# Convert it
+!python convert_weight.py --repo ../stylegan2-ada /content/gdrive/MyDrive/styleganada-results/00009-custom-mirror-stylegan2-kimg10000-ada-bgc-resumecustom/network-snapshot-000070.pkl
+
+import audioreactive as ar
+from generate_audiovisual import generate
+
+def initialize(args):
+    # exercise for the reader:
+    # install https://github.com/deezer/spleeter
+    # split your audio file into 4 tracks
+    # then load them individually for higher-quality onsets/chroma/etc. e.g.:
+    #     !spleeter separate $audio_file -p spleeter:4stems
+    #     drums, drum_sr = rosa.load("/path/to/drum_file.wav")
+    args.onsets = ar.onsets(args.audio, args.sr, ...)
+    args.chroma = ar.chroma(args.audio, args.sr, ...)
+    return args
+
+def get_latents(selection, args):
+    latents = ar.chroma_weight_latents(args.chroma, selection)
+    return latents
+
+def get_noise(height, width, scale, num_scales, args):
+    noise = ar.perlin_noise(...)
+    noise *= 1 + args.onsets
+    return noise
+
+generate(ckpt="/path/to/model.pt", audio_file="/path/to/audio.wav", initialize=initialize, get_latents=get_latents, get_noise=get_noise)

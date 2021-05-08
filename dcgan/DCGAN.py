@@ -7,6 +7,8 @@ Original file is located at
     https://colab.research.google.com/drive/1AS2TWY9n0ACVBr-_bNe84N4xQ8B8OgKj
 """
 
+""" Please be aware that those code lines which start with a ! is a command bash line, not an actual code """
+
 import tensorflow as tf
 from tensorflow.keras import layers
 
@@ -23,6 +25,8 @@ import PIL
 
 # loading my dataset here
 
+########################
+# SYNTAX ONLY AVAILABLE FOR GOOGLE COLAB
 # mount google drive
 from google.colab import drive
 drive.mount('/content/gdrive')
@@ -31,6 +35,7 @@ drive.mount('/content/gdrive')
 # !rm -rf dataset
 # unzip dataset folder
 !unzip '/content/gdrive/MyDrive/AI-Assets/GAN/dataset.zip' > /dev/null
+#######################
 
 # Global Variables
 AUTOTUNE = tf.data.experimental.AUTOTUNE

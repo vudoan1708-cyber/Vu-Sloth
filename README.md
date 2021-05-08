@@ -13,6 +13,15 @@ Tensorflow version: 2.4.1
 ## StyleGAN2
 Tensorflow version: 1.15.2
 
+# Use Case
+Make sure you have got all the dependencies install by doing
+```bash
+pip install -r requirements.txt
+```
+as well as installing the prerequisites mentioned above <br />
+
+You will need to also create a folder named "my_new_dataset" inside the "dataset" folder, so that when the code processes the images, duplicate them and relocate those to a new folder, you won't get an error
+
 # Caution
 Since the files (dataset + training model checkpoints and the result images) are too big. The download time may take a long while. Please be patient! Thank you!!! <br />
 Also, the training models were too large even for Github Large File Storage (LFS) to handle. Therefore, some other training and image files would be omitted for the sake of uploading and downloading them
