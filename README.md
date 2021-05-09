@@ -3,7 +3,7 @@ The project is about implementing a GAN (DCGAN, StyleGAN) network to blend facia
 
 # Google Colab links
 [DCGAN] (https://colab.research.google.com/drive/1vNZ1swbEwyLJlvbV0_WDYcRYHQ1BfV8O) <br />
-[StyleGAN2] (https://colab.research.google.com/drive/1KJOrQhYnmLby8CuOFmt8kZTc71MwkHiN)
+[StyleGAN2] (https://colab.research.google.com/drive/17vOy7tuJ0xvnZXAPCv32WM7vu46iD3xF?authuser=2)
 
 # Prerequisites based on Google Colab
 Python version: 3.7.10 <br />
