@@ -965,7 +965,7 @@ dnnlib.tflib.init_tf()
 # network_pkl = '/content/stylegan2-ffhq-config-f.pkl'
 
 # With previous training
-network_pkl = '/content/gdrive/MyDrive/styleganada-results/00005-custom-mirror-stylegan2-kimg10000-ada-bgc-resumecustom/network-snapshot-000141.pkl'
+network_pkl = '/content/gdrive/MyDrive/styleganada-results/00009-custom-mirror-stylegan2-kimg10000-ada-bgc-resumecustom/network-snapshot-000070.pkl'
 
 print('Loading networks from "%s"...' % network_pkl)
 with dnnlib.util.open_url(network_pkl) as fp:
@@ -1226,24 +1226,26 @@ os.getcwd()
 # Commented out IPython magic to ensure Python compatibility.
 # %cd stylegan2-pytorch
 
+# Use pretrained model
 # FFHQ
 !wget https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada/pretrained/ffhq.pkl
 
 # Derrick Schultz's Frea Buckler network (from awesome-pretrained-stylegan2)
 # !gdown https://drive.google.com/u/0/uc?id=1YzZemZAp7BVW701_BZ7uabJWJJaS2g7v
 
-# Convert it
-!python ../stylegan2-pytorch/convert_weight.py --gen ffhq.pkl --repo ../stylegan2-ada/
+# Convert any model to py
+!python ../stylegan2-pytorch/convert_weight.py --gen /content/gdrive/MyDrive/styleganada-results/00005-custom-mirror-stylegan2-kimg10000-ada-bgc-resumecustom/network-snapshot-000141.pkl --repo ../stylegan2-ada/
+# !python ../stylegan2-pytorch/convert_weight.py --gen ffhq.pkl --repo ../stylegan2-ada/
 # !python ../stylegan2-pytorch/convert_weight.py --gen FreaGAN.pkl --repo ../stylegan2/
-# !python convert_weight.py --repo ../stylegan2-ada /content/gdrive/MyDrive/styleganada-results/00009-custom-mirror-stylegan2-kimg10000-ada-bgc-resumecustom/network-snapshot-000070.pkl
+# !python ../stylegan2-pytorch/convert_weight.py --repo ../stylegan2-ada /content/gdrive/MyDrive/styleganada-results/00009-custom-mirror-stylegan2-kimg10000-ada-bgc-resumecustom/network-snapshot-000070.pkl
 
 audio_file = '/content/gdrive/MyDrive/audio/demon.mp3'
 
-!git clone https://github.com/deezer/spleeter
+# !git clone https://github.com/deezer/spleeter
 
 # split your audio file into 4 tracks
 # then load them individually for higher-quality onsets/chroma/etc. e.g.:
-!spleeter separate $audio_file -p spleeter:4stems
+# !spleeter separate $audio_file -p spleeter:4stems
 
 # Commented out IPython magic to ensure Python compatibility.
 # %cd /content/maua-stylegan2
@@ -1252,6 +1254,14 @@ import torch as th
 import librosa as rosa
 import audioreactive as ar
 from generate_audiovisual import generate
+
+print("Time                     GPU        Used      Total")
+!nvidia-smi --query-gpu=timestamp,name,memory.used,memory.free --format=csv,noheader
+import gc
+import torch
+gc.collect()
+torch.cuda.empty_cache()
+!nvidia-smi --query-gpu=timestamp,name,memory.used,memory.free --format=csv,noheader
 
 def initialize(args):
     # exercise for the reader:
@@ -1300,6 +1310,19 @@ def get_noise(height, width, scale, num_scales, args):
         noise = hi_onsets * noise_noisy + (1 - hi_onsets) * noise
 
     noise /= noise.std() * 2.5
-    return noise
+    return noise.cpu()
 
-generate(ckpt="/content/stylegan2-pytorch/ffhq.pt", audio_file="/content/gdrive/MyDrive/audio/demon.mp3", initialize=initialize, get_latents=get_latents, get_noise=get_noise)
+generate(ckpt="/content/stylegan2-pytorch/network-snapshot-000070.pt",
+        # ckpt="/content/stylegan2-pytorch/ffhq.pt",
+        # audio_file=audio_file,
+        output_dir="../",
+        out_size=1024, # at the moment only 512x512, 1024x1024, 1920x1080 outputs are supported (out_size = 512, 1024, or 1920 respectively)
+        G_res=1024,
+        batch=4,  # CUDA out of memory errors => smaller batch (also try running the previous cell, to clear some GPU memory)
+        ffmpeg_preset="faster",  # RAM crashes => faster preset (see https://trac.ffmpeg.org/wiki/Encode/H.264)
+        fps=24,
+        duration=60, # remove this line for full video
+        audio_file="/content/gdrive/MyDrive/audio/demon.mp3",
+        initialize=initialize,
+        get_latents=get_latents,
+        get_noise=get_noise)
