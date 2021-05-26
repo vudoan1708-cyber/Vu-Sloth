@@ -2,8 +2,8 @@
 The project is about implementing a GAN (DCGAN, StyleGAN) network to blend facial features of mine and sloth's
 
 # Google Colab links
-[DCGAN] (https://colab.research.google.com/drive/1vNZ1swbEwyLJlvbV0_WDYcRYHQ1BfV8O) <br />
-[StyleGAN2] (https://colab.research.google.com/drive/17vOy7tuJ0xvnZXAPCv32WM7vu46iD3xF?authuser=2)
+[DCGAN] (https://colab.research.google.com/drive/1vNZ1swbEwyLJlvbV0_WDYcRYHQ1BfV8O?usp=sharing) <br />
+[StyleGAN2] (https://colab.research.google.com/drive/1Bitt3DRPTAU8B8HrA4XYfsCnHk795Bd2?usp=sharing)
 
 # Prerequisites based on Google Colab
 Python version: 3.7.10 <br />
